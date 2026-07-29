@@ -1,0 +1,30 @@
+{
+  "summary": "Frontend e2e testing of new role-based auth (Utente/Intermediario) and feedback system. Discovered a runtime crash for any logged-in intermediary due to missing IdentificationBadge import in Header.jsx (blocked entire /intermediary-dashboard and Portal when session=intermediary). Fixed the import. All 9 target flows pass after the fix.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "Header.jsx", "issue": "ReferenceError: IdentificationBadge is not defined — icon used at line 69 (Area intermediario link) but not imported from @phosphor-icons/react. Caused runtime error boundary crash on any page rendered while an intermediary user was logged in (dashboard, portal, account). FIXED by adding IdentificationBadge to the import list.", "selector": "Header nav for intermediary role", "priority": "CRITICAL (fixed)"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Review Header.jsx fix and consider adding a global React ErrorBoundary so a missing icon does not break the entire authenticated area.",
+    "Confirm the intermediary self-registration flow (fresh user + RUI A000109352) is idempotent given seed already claims A000109352 to agente.demo — the test passed (redirect to /), but E1 may want to add a friendlier 'RUI già rivendicato' UX/toast."
+  ],
+  "critical_code_review_comments": [
+    "Header.jsx: missing icon import caused a full runtime crash for intermediary role. Suggest adding an ErrorBoundary.",
+    "DrawerFeedback.jsx: correctly hides feedback form for owner (isOwner check on user.rui_number === rui). Good.",
+    "Login.jsx: register() posts role + rui_number; error toast wiring via formatErr handles both string and array FastAPI validation errors.",
+    "IntermediaryDashboard.jsx: guards on user role and redirects properly; stats + distribution + recent feedback render as expected."
+  ],
+  "updated_files": ["/app/frontend/src/components/Header.jsx"],
+  "success_rate": {"backend": "not tested (per request)", "frontend": "100% (9/9 after fix)"},
+  "test_credentials": "mario.test@example.com / test1234 (Utente); agente.demo@example.com / test1234 (Intermediario, RUI A000109352). Created during testing: TEST_user_<ts>@example.com, TEST_int_<ts>@example.com (intermediary claim on A000109352 — may need cleanup if seed re-runs).",
+  "seed_data_creation": "Fresh test user + potentially an extra intermediary account created (TEST_ prefixed emails). One 5-star review by mario.test on A000109352 with comment 'Ottimo servizio - test automatico'.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All 9 flows validated: register (Utente/Intermediario/invalid RUI), login (Utente/Intermediario), intermediary dashboard render + profile update, mario leaves 5-star feedback on A000109352, /account shows profile + my-feedback list (Utente badge visible), owner-cannot-review guard verified. Header icon crash fixed. If retesting, ensure the previous TEST_ users still exist or use fresh timestamps.",
+  "rca of the issue": "Header.jsx imported all phosphor icons except IdentificationBadge. When AuthContext hydrated a user with role=intermediary, Header rendered the 'Area intermediario' link with the missing component, throwing ReferenceError caught by React error overlay, breaking dashboard and portal for intermediary sessions. Fix: added IdentificationBadge to the phosphor-icons/react named-import list in Header.jsx line 3."
+}

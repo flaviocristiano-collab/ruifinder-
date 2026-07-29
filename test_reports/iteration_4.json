@@ -1,0 +1,28 @@
+{
+  "summary": "Tested new analytics & AI insights for both intermediary dashboard and user account. Backend: 6/6 pytest passing (my/intermediary shape+analytics+completeness, my/intermediary/insights non-empty, 403 for standard user, completeness drop-on-clear-bio + restore, my/stats with consultations top_sections/top_provinces + recent_history, my/insights non-empty). Frontend: intermediary dashboard renders 4 KPI cards, ai-insight (loads in ~6-8s), completeness-card 100% with 5 checklist items (drops to 80% after clearing bio, restored to 100%), mandati-card lists 4 companies, collaboratori-card shows counts by section + sedi/province line. User /account shows user-ai-insight (loads ~4s), 4 stat cards, rating-given-card, consult-analytics-card with sezioni + province tags, history-section with 5+ history-items. Feedback flow validated: user leaves 5-star review on A000109352 → /account updates: Recensioni 0→1, Voto medio dato 5, distribution 5★=1, my-feedback-item appears. History link click navigates to /?rui=... correctly.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_analytics_insights.py",
+    "/app/test_reports/pytest/analytics_insights.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "server.py is 1275 lines — consider splitting into routers (auth, intermediary, feedback, analytics, ai) to improve maintainability.",
+    "AI insight endpoints are called synchronously per page-load and take 4-8s — consider caching results per user for short TTL (e.g. 5 min) to avoid re-billing Gemini on every dashboard/account refresh.",
+    "Frontend intermediary AI insight showed 'Sto analizzando…' placeholder for ~6-8s; consider showing a skeleton/spinner and/or streaming to improve perceived latency.",
+    "consult-analytics-card 'Cosa consulti di più' displays counts as ' · N' next to labels — spacing is fine but ensure the section '(E)' collaboratori mapping is applied consistently (labels look correct: 'Collaboratori / Addetti · 3').",
+    "Cronologia consultazioni items display 'Collaboratori / Addetti · ()' when comune/provincia missing — consider hiding the parentheses when empty."
+  ],
+  "updated_files": ["/app/backend/tests/test_analytics_insights.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "utente.pro@test.com/TestPro2026!, intermediario.pro@test.com/TestPro2026! (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "Created 1 feedback entry as utente.pro on RUI A000109352 (5 stars, 'TEST_review ottimo servizio.'). This did not modify seeded intermediary accounts. Bio for intermediario.pro was cleared and restored during completeness test.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "All PR features working. If retesting, note that user PRO has now left 1 review on A000109352 during this iteration; stats will show count>=1. Bio for A000101292 (intermediario.pro) was restored to original value 'Ciao' (length 4), so completeness stays at 100%. AI endpoints have 4-8s latency (Gemini) — always poll for text length >60 chars rather than exact wording."
+}
